@@ -1,0 +1,25 @@
+QListView {
+    show-decoration-selected: 1; /* make the selection span the entire width of the view */
+    background: #dcd6f7;
+    border: 5px solid #dcd6f7;
+}
+
+QListView::item:alternate {
+    background: #f1f6f9;
+}
+
+QListView::item:selected {
+    border: 1px solid #6a6ea9;
+}
+
+QListView::item:selected:!active {
+    background: #8588B2;
+}
+
+QListView::item:selected:active {
+    background: #888dd9;
+}
+
+QListView::item:hover {
+    background: #FAFBFE;
+}

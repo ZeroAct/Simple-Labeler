@@ -1,22 +1,19 @@
-import sys
-if __name__ != "__main__":
-    sys.path.insert(0, "utils")
-
 from PyQt5.QtWidgets import \
     QApplication, QLabel
 
 from PyQt5.QtGui import \
-    QPixmap, QPainter, QColor, QPen
+    QPixmap, QPainter, QColor, QPen, QFont
 
 from PyQt5.QtCore import \
     Qt, QPoint, pyqtSignal
 
-from color import color_list
-from dtype import Annotation
+from src.utils.color import color_list
+from src.utils.dtype import Annotation
 
 # Canvs Class
 class Canvas(QLabel):
     get_annotation = pyqtSignal(Annotation)
+    get_clicked_pos = pyqtSignal(int, int)
     
     def __init__(self,
                  parent:object,
@@ -32,6 +29,8 @@ class Canvas(QLabel):
         self.original_size    = size
         self._pixmap          = pixmap if pixmap is not None else QPixmap(500, 500)
         
+        self.click_offset     = 3
+        
         ### manage offset
         self.x_offset         = 0
         self.y_offset         = 0
@@ -40,8 +39,8 @@ class Canvas(QLabel):
         
         ### painter
         self._painter         = QPainter()
-        self.mouse_x          = -1
-        self.mouse_y          = -1
+        self.mouse_x          = -999
+        self.mouse_y          = -999
         
         ### drawing
         self.drawing          = False
@@ -60,11 +59,6 @@ class Canvas(QLabel):
         self.setPixmap(self._pixmap)
         self.setAlignment(Qt.AlignCenter)
     
-    def draw_annot(self, annot):
-        self.drawing_annot = annot
-        self.update()
-        self.drawing_annot = Annotation()
-    
     def is_valid_point(self, x, y):
         if self.x_offset <= x < self.size[0] - self.x_offset and \
             self.y_offset <= y < self.size[1] - self.y_offset:
@@ -78,14 +72,13 @@ class Canvas(QLabel):
         if self.drawing_annot.is_valid():
             x1, y1, x2, y2 = self.drawing_annot.get_pos()
             
-            offset = 4
-            if x1 - offset < x < x1 + offset and y1 < y < y2:
+            if x1 - self.click_offset < x < x1 + self.click_offset and y1 < y < y2:
                 self.modifing_index = 0
-            elif y1 - offset < y < y1 + offset and x1 < x < x2:
+            elif y1 - self.click_offset < y < y1 + self.click_offset and x1 < x < x2:
                 self.modifing_index = 1
-            elif x2 - offset < x < x2 + offset and y1 < y < y2:
+            elif x2 - self.click_offset < x < x2 + self.click_offset and y1 < y < y2:
                 self.modifing_index = 2
-            elif y2 - offset < y < y2 + offset and x1 < x < x2:
+            elif y2 - self.click_offset < y < y2 + self.click_offset and x1 < x < x2:
                 self.modifing_index = 3
         
         return self.modifing_index
@@ -107,22 +100,16 @@ class Canvas(QLabel):
         return self._pixmap
     
     def paintEvent(self, ev):
-        # painter setting
         pixmap = self._pixmap.copy()
         
         p = self._painter
         p.begin(pixmap)
-        # p.setRenderHint(QPainter.Antialiasing)
-        # p.setRenderHint(QPainter.HighQualityAntialiasing)
-        # p.setRenderHint(QPainter.SmoothPixmapTransform)
         
         p.translate(-self.x_offset, -self.y_offset)
         
         pen = QPen()
         if self.drawing_annot.is_valid():
-            cat_id = self.drawing_annot.get_cat_id()
-            
-            pen.setColor(QColor(*color_list[cat_id]))
+            pen.setColor(QColor(*color_list[-1]))
             pen.setWidth(3)
             p.setPen(pen)
             
@@ -130,10 +117,14 @@ class Canvas(QLabel):
                 x1, y1, x2, y2 = self.drawing_annot.get_pos()
                 p.drawRect(x1, y1, x2-x1, y2-y1)
                 
-        pen.setColor(QColor(255, 255, 255))
-        pen.setWidth(2)
+        pen.setColor(QColor(255, 255, 255, 100))
+        pen.setWidth(3)
         p.setPen(pen)
-        
+        p.drawLine(self.mouse_x, -1, self.mouse_x, self.y_offset+pixmap.height()+1)
+        p.drawLine(-1, self.mouse_y, self.x_offset+pixmap.width()+1, self.mouse_y)
+        pen.setColor(QColor(255, 0, 0))
+        pen.setWidth(1)
+        p.setPen(pen)
         p.drawLine(self.mouse_x, -1, self.mouse_x, self.y_offset+pixmap.height()+1)
         p.drawLine(-1, self.mouse_y, self.x_offset+pixmap.width()+1, self.mouse_y)
         
@@ -142,6 +133,45 @@ class Canvas(QLabel):
         p.begin(self)
         p.drawPixmap(QPoint(self.x_offset, self.y_offset), pixmap, self.rect())
         p.end()
+    
+    def draw_annotations(self, annots):
+        # pixmap = self._pixmap.copy()
+        
+        p = self._painter
+        p.begin(self._pixmap)
+        
+        p.translate(-self.x_offset, -self.y_offset)
+        
+        pen = QPen()
+        pen.setWidth(3)
+        
+        font = QFont()
+        font.setBold(True)
+        font.setPixelSize(14)
+        p.setFont(font)
+        
+        for annot in annots.copy():
+            annot.to_draw_pos(self.x_offset, self.y_offset, self.x_ratio, self.y_ratio)
+            cat_id = annot.get_cat_id()
+            
+            pen.setColor(QColor(*color_list[cat_id]))
+            p.setPen(pen)
+            if annot.get_draw_type() == "rect":
+                x1, y1, x2, y2 = annot.get_pos()
+                p.drawRect(x1, y1, x2-x1, y2-y1)
+            p.drawText(x1+4, y1+14, annot.get_cat())
+                
+        p.end()
+        self.update()
+        # super().setPixmap(pixmap)
+    
+    def set_annotation(self, annot):
+        annot.to_draw_pos(self.x_offset, self.y_offset, self.x_ratio, self.y_ratio)
+        self.drawing_annot = annot
+        self.update()
+    
+    def reset_annotation(self):
+        self.drawing_annot = Annotation()
     
     def setPixmap(self, pixmap):
         self._pixmap = pixmap.scaled(*self.size, Qt.KeepAspectRatio)
@@ -152,6 +182,7 @@ class Canvas(QLabel):
         self.x_ratio = pixmap.size().width() / self._pixmap.width()
         self.y_ratio = pixmap.size().height() / self._pixmap.height()
         
+        self.reset_annotation()
         super().setPixmap(self._pixmap)
         
     def mousePressEvent(self, ev):
@@ -166,8 +197,15 @@ class Canvas(QLabel):
                     self.drawing = True
                 
         elif ev.buttons() & Qt.RightButton:
-            self.drawing = False
-            self.drawing_annot.clear_pos()
+            if self.drawing:
+                self.drawing = False
+                self.drawing_annot.clear_pos()
+            else:
+                if not self.drawing_annot.is_valid():
+                    self.get_clicked_pos.emit((ev.x()-self.x_offset)*self.x_ratio, (ev.y()-self.y_offset)*self.y_ratio)
+                elif self.drawing_annot.is_valid():
+                    self.drawing = False
+                    self.drawing_annot.clear_pos()
         
         self.update()
     
@@ -201,8 +239,8 @@ class Canvas(QLabel):
         
         else:
             QApplication.setOverrideCursor(Qt.ArrowCursor)
-            self.mouse_x = -1
-            self.mouse_y = -1
+            self.mouse_x = -999
+            self.mouse_y = -999
                  
         self.update()
     
@@ -220,19 +258,16 @@ class Canvas(QLabel):
             self.update()
     
     def keyPressEvent(self, ev):
-        if ev.key() == Qt.Key_Return:
-            self.drawing_annot.apply_offset(self.x_offset, self.y_offset)
-            self.drawing_annot.apply_ratio(self.x_ratio, self.y_ratio)
-            # print(self.drawing_annot)
-            
-            self.get_annotation.emit(self.drawing_annot)
-
-    # def enterEvent(self, e):
-    #     QApplication.setOverrideCursor(Qt.CrossCursor)
+        if ev.key() in [Qt.Key_Return, Qt.Key_Space]:
+            if not self.drawing:
+                self.drawing_annot.to_real_pos(self.x_offset, self.y_offset, self.x_ratio, self.y_ratio)
+                print(type(self.drawing_annot))
+                self.get_annotation.emit(self.drawing_annot)
+                self.drawing_annot = Annotation()
     
     def leaveEvent(self, e):
-        self.mouse_x = -1
-        self.mouse_y = -1
+        self.mouse_x = -999
+        self.mouse_y = -999
         self.update()
         
         QApplication.setOverrideCursor(Qt.ArrowCursor)
@@ -241,8 +276,6 @@ if __name__ == "__main__":
     app = QApplication([])
     w = Canvas(None,
                size=(1280, 720),
-                pixmap=QPixmap("./test.png"),
-               # pixmap=None
-               )
+                pixmap=QPixmap("./test.png")               )
     w.show()
     app.exec_()
