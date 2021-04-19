@@ -32,6 +32,7 @@ class CatObject(QWidget):
         l.addStretch(1)
         
         self.setLayout(l)
+        self.setStyleSheet("color: white; font-size: 20px; font-weight: bold;")
         
     def mousePressEvent(self, ev):
         if ev.buttons() & Qt.LeftButton:
@@ -39,11 +40,11 @@ class CatObject(QWidget):
     
     def select(self):
         if not self.selected:
-            self.setStyleSheet("background: #888dd9;")
+            self.setStyleSheet("color: white; font-size: 20px; font-weight: bold; background: #14274e;")
             self.selected_label.show()
         else:
             self.selected_label.hide()
-            self.setStyleSheet("background: #EEEEEE;")
+            self.setStyleSheet("color: white; font-size: 20px; font-weight: bold; background: #36496e;")
         
         self.selected = not self.selected
         

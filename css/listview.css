@@ -1,15 +1,15 @@
 QListView {
     show-decoration-selected: 1; /* make the selection span the entire width of the view */
-    background: #dcd6f7;
-    border: 5px solid #dcd6f7;
+    background: #36496e;
+    border: 5px solid #25385d;
 }
 
 QListView::item:alternate {
-    background: #f1f6f9;
+    background: #14274e;
 }
 
 QListView::item:selected {
-    border: 1px solid #6a6ea9;
+    border: 1px solid #14274e;
 }
 
 QListView::item:selected:!active {
@@ -17,9 +17,13 @@ QListView::item:selected:!active {
 }
 
 QListView::item:selected:active {
-    background: #888dd9;
+    background: #14274e;
 }
 
 QListView::item:hover {
-    background: #FAFBFE;
+    background: #586b8f;
+}
+
+QLabel:hover {
+    background: #586b8f;
 }

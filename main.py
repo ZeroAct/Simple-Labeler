@@ -5,10 +5,11 @@ from PyQt5.QtWidgets import \
 
 from PyQt5.QtGui import \
     QPixmap, QPainter, QColor, QPen, QIcon
-
+6
 from PyQt5.QtCore import \
     Qt, QPoint, pyqtSignal
 
+from src.widgets.help_widget import HelpWidget
 from src.widgets.canvas import Canvas
 from src.widgets.hint_slider import HintSlider
 from src.widgets.category_list import CatListView, CatObject
@@ -61,6 +62,10 @@ class MainWindow(QMainWindow):
         self.category_listw = CatListView(parent=self)
         self.category_listw.setStyleSheet(load_stylesheet('css/listview.css'))
         self.category_listw.get_selected_cat.connect(self.selected_cat_changed)
+        
+        # help
+        self.help_widget = HelpWidget()
+        self.help_widget.setStyleSheet(load_stylesheet('css/help_widget.css'))
     
     def init_layout(self):
         main_widget = QWidget()
@@ -72,6 +77,7 @@ class MainWindow(QMainWindow):
         
         cat_layout = QVBoxLayout()
         cat_layout.addWidget(self.category_listw)
+        cat_layout.addWidget(self.help_widget)
         
         main_layout.addItem(canvas_layout)
         main_layout.addItem(cat_layout)
