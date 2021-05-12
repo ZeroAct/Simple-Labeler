@@ -15,6 +15,8 @@ class Annotation(object):
         
         self.valid = False
         
+        self.x_offset, self.y_offset, self.x_ratio, self.y_ratio = 0, 0, 1, 1
+        
         self.get_draw_type = lambda: self.draw_type
         self.get_cat_id = lambda: self.cat_id
         self.get_cat = lambda: self.cat

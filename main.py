@@ -158,7 +158,6 @@ class MainWindow(QMainWindow):
             # 카테고리 선택창 세팅
             self.category_listw.clear()
             for cat, id_ in self.cat_id.items():
-                print(cat, id_)
                 self.category_listw.addCatObject(CatObject(cat, color_list[id_]))
             
             # 프레임 이동 slider 세팅

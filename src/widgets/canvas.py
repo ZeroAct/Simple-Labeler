@@ -160,6 +160,8 @@ class Canvas(QLabel):
                 x1, y1, x2, y2 = annot.get_pos()
                 p.drawRect(x1, y1, x2-x1, y2-y1)
             p.drawText(x1+4, y1+14, annot.get_cat())
+            
+            annot.to_real_pos(self.x_offset, self.y_offset, self.x_ratio, self.y_ratio)
                 
         p.end()
         self.update()
@@ -261,7 +263,6 @@ class Canvas(QLabel):
         if ev.key() in [Qt.Key_Return, Qt.Key_Space]:
             if not self.drawing:
                 self.drawing_annot.to_real_pos(self.x_offset, self.y_offset, self.x_ratio, self.y_ratio)
-                print(type(self.drawing_annot))
                 self.get_annotation.emit(self.drawing_annot)
                 self.drawing_annot = Annotation()
     
